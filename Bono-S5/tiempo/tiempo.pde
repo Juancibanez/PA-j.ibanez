@@ -1,25 +1,24 @@
-int h;
-int m;
-int s;
+int size;
 
 String timeString;
 
 void setup(){
   size(500,500);
   noStroke();
-  textSize(24);
   textAlign(CENTER,CENTER);
+  size = 15;
 }
 
 void draw(){
   background(#5C80BC);
+  textSize(size);
   fill(#E8C547);
   
-  h = hour();
-  m = minute();
-  s = second();
+  if(mousePressed && (mouseButton == LEFT))  size+=5;
+  else if(mousePressed && (mouseButton == RIGHT)) size-=5;
 
-  timeString = nf(h,2) + ":" + nf(m,2) + ":" + nf(s,2);
+  timeString = nf(hour(),2) + ":" + nf(minute(),2) + ":" + nf(second(),2);
   text(timeString,width/2,height/2);
+  println(size);
   
 }
