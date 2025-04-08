@@ -1,29 +1,55 @@
-//Pseudocódigo general de la app
+//Pseudocódigo
 
-//Inicio del programa:
+//Inicio
 
-//    Inicializar escenaActual en 0
-//    Cargar fondo, personajes, y textos correspondientes a cada escena
-//    Opcional: Cargar audios y animaciones por escena
+//    Declarar lista de escenas
+//    Declarar variable escenaActual ← 0
 
-//    Mientras el programa esté corriendo:
-//        Mostrar la escena correspondiente a escenaActual
+//    Procedimiento setup
+//        Definir tamaño de ventana
+//        Inicializar lista de escenas
 
-//        Esperar evento de usuario:
-//            Si se presiona tecla flecha derecha o ENTER:
-//                Incrementar escenaActual en 1
-//                Si escenaActual supera el número de escenas:
-//                    Finalizar historia o reiniciar
-//                Sino:
-//                    Mostrar nueva escena
-//                    Reproducir audio si corresponde
+//        Por cada escena clave
+//            Crear objeto Escena con texto, imagen y audio (si aplica)
+//            Agregarlo a la lista
 
-//            Si se hace clic con el mouse:
-//                Si hay acción especial (como un personaje hablando o animación):
-//                    Ejecutar acción especial (ej: reproducir voz del personaje)
+//        Alinear texto al centro
+//        Definir tamaño de fuente
+//    FinProcedimiento
 
-//        Fin del evento
+//    Procedimiento draw
+//        Limpiar pantalla
+//        Mostrar escena en posición escenaActual
+//    FinProcedimiento
 
-//    Fin del bucle
+//    Procedimiento keyPressed
+//        Si se presiona tecla flecha derecha o ENTER entonces
+//            Incrementar escenaActual
+//            Si escenaActual ≥ número de escenas
+//                escenaActual ← última escena
+//            FinSi
+//        FinSi
+//    FinProcedimiento
 
-//Fin del programa
+//    Procedimiento mousePressed
+//        // Aquí se podría activar una acción especial, como reproducir un audio
+//        // Si la escena actual tiene audio, se reproduce
+//    FinProcedimiento
+
+//    Clase Escena
+//        Atributos:
+//            texto
+//            imagen
+//            audio
+
+//        Constructor Escena(texto, imagen, audio)
+//            Asignar valores a los atributos
+
+//        Método mostrar()
+//            Mostrar imagen si existe
+//            Mostrar texto en el centro
+//            Reproducir audio si aplica (según el diseño)
+//        FinMétodo
+//    FinClase
+
+//Fin

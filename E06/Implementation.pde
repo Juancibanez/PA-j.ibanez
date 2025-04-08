@@ -1,3 +1,5 @@
+import processing.sound.*;
+
 ArrayList<Escena> escenas;
 int escenaActual = 0;
 
@@ -42,10 +44,12 @@ void mousePressed() {
 class Escena {
   String texto;
   PImage img;
+  SoundFile audio;
 
-  Escena(String texto, PImage img) {
+  Escena(String texto, PImage img, SoundFile audio) {
     this.texto = texto;
     this.img = img;
+    this.audio = audio;
   }
 
   void mostrar() {
