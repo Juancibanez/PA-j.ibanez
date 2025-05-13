@@ -1,4 +1,11 @@
 // Juan Camilo Ibáñez - 201924835
+//datos sacados de https://www.kaggle.com/datasets/arpitsinghaiml/youtube-user-by-country-2025/data
+
+Table table;
+int nSamples;
+float[] totalUsers;
+
+float x;
 
 int currentScene = 0;
 int nextScene = 0;
@@ -11,6 +18,26 @@ float zoom = 1.0;
 boolean zoomingOut = false;
 
 Person[] people;
+
+void setup() {
+  size(800, 600);
+  textAlign(CENTER);
+
+  // Primero carga los datos
+  table = loadTable("youtube2025.csv", "header");
+  nSamples = table.getRowCount();
+  totalUsers = new float[nSamples];
+
+  for (int i = 0; i < nSamples; i++) {
+    totalUsers[i] = table.getFloat(i, "YouTubeUsers_TotalUsers_Num_2024Feb");
+  }
+
+  // Ahora sí puedes crear las personas que usan totalUsers
+  people = new Person[25];
+  for (int i = 0; i < people.length; i++) {
+    people[i] = new Person(random(width), random(height));
+  }
+}
 
 void draw() {
   background(255);
@@ -69,18 +96,8 @@ void keyPressed() {
   }
 }
 
-
-
-void setup() {
-  size(800, 600);
-  people = new Person[10];
-  for (int i = 0; i < people.length; i++) {
-    people[i] = new Person(random(width), random(height));
-  }
-}
-
 void sceneOne() {
-  background(200, 200, 255);
+  background(#87a1ab);
   for (Person p : people) {
     p.update();
     p.display();
@@ -91,13 +108,18 @@ class Person {
   float x, y;
   float speed;
   color bodyColor;
+  float userData;  // Valor de usuario (dato real)
 
   Person(float x, float y) {
     this.x = x;
     this.y = y;
-    this.speed = random(1, 3);
+    this.speed = random(-5, 5);
     // tonos morados (mezcla de azul y rojo)
     bodyColor = color(random(120, 200), random(0, 80), random(120, 255));
+    
+    int index = int(random(nSamples));  // Escoge un índice aleatorio de totalUsers
+    userData = totalUsers[index];
+    
   }
 
   void update() {
@@ -115,10 +137,13 @@ class Person {
 
 void sceneTwo() {
   background(0);
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  fill(0, 255, 0);
+  
   for (Person p : people) {
     p.update();
-    fill(0, 255, 0);
-    rect(p.x, p.y, 10, 10);  // Representa datos
+    text(int(p.userData), p.x, p.y);  // Mostrar el número como dato
   }
 }
 
