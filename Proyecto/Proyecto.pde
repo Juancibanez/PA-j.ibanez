@@ -32,7 +32,6 @@ void setup() {
     totalUsers[i] = table.getFloat(i, "YouTubeUsers_TotalUsers_Num_2024Feb");
   }
 
-  // Ahora sí puedes crear las personas que usan totalUsers
   people = new Person[25];
   for (int i = 0; i < people.length; i++) {
     people[i] = new Person(random(width), random(height));
@@ -40,7 +39,7 @@ void setup() {
 }
 
 void draw() {
-  background(255);
+  background(50); // O el color que prefieras por defecto antes de que las escenas dibujen
 
   // Mostrar la escena actual
   switch(currentScene) {
@@ -63,6 +62,33 @@ void draw() {
     if (fadingOut) {
       alpha += fadeSpeed;
       if (alpha >= 255) {
+        alpha = 255;
+        currentScene = nextScene;
+        fadingOut = false;
+        // Si la nueva escena es la 0 (sceneOne), resetea el zoom.
+        if (currentScene == 0) {
+            resetZoom();
+        }
+      }
+    } else { // Fading In
+      alpha -= fadeSpeed;
+      if (alpha <= 0) {
+        alpha = 0;
+        transitioning = false;
+        fadingOut = true;
+      }
+    }
+  }
+
+
+  // Si hay transición, dibujar el fade
+if (transitioning) {
+    fill(0, alpha);
+    rect(0, 0, width, height);
+
+    if (fadingOut) {
+      alpha += fadeSpeed;
+      if (alpha >= 255) {
         // cambio de escena una vez pantalla está completamente negra
         currentScene = nextScene;
         fadingOut = false;
@@ -79,19 +105,24 @@ void draw() {
 }
 
 void keyPressed() {
-  if (key == ' ' && !transitioning) {
+  if (key == ' ' && !transitioning) { // Solo si no hay una transición en curso
     nextScene = (currentScene + 1) % 3;
 
-    // Solo aplicar transición entre escena 0 y 1
-    if (currentScene == 0 && nextScene == 1) {
+    if (currentScene == 0 && nextScene == 1) { // De Escena 0 a Escena 1
       transitioning = true;
       alpha = 0;
       fadingOut = true;
+    } else if (currentScene == 2 && nextScene == 0) { // De Escena 2 (sceneThree) a Escena 0 (sceneOne)
+      // Esta es la transición que quieres activar con espacio desde sceneThree
+      transitioning = true;
+      alpha = 0;
+      fadingOut = true;
+      // resetZoom() será llamado por la lógica en draw() cuando currentScene se vuelva 0
     } else {
+      // Para otras transiciones (ej. Escena 1 a Escena 2), cambio instantáneo
       currentScene = nextScene;
-      if (currentScene == 0) {
-        resetZoom(); // volver a zoom normal si pasamos de escena 2 a 0
-      }
+      // No se necesita resetZoom() aquí porque la escena 2 no lo usa al inicio
+      // y la escena 0 ya se maneja arriba y en draw().
     }
   }
 }
@@ -139,7 +170,7 @@ void sceneTwo() {
   background(0);
   textAlign(CENTER, CENTER);
   textSize(14);
-  fill(0, 255, 0);
+  fill(random(120, 200), random(0, 80), random(120, 255));
   
   for (Person p : people) {
     p.update();
@@ -150,26 +181,32 @@ void sceneTwo() {
 void sceneThree() {
   background(0);
 
-  // Zoom-out
   pushMatrix();
   translate(width/2, height/2);
-  scale(zoom);
+  scale(zoom); // Aplicar el zoom actual
   translate(-width/2, -height/2);
 
   for (Person p : people) {
-    fill(0, 255, 0);
+    fill(random(120, 200), random(0, 80), random(120, 255));
     rect(p.x, p.y, 10, 10);
   }
   popMatrix();
 
-  zoom *= 0.98;
+  // Continuar el efecto de zoom out si no estamos en medio de una transición de salida
+  if (!transitioning) {
+    zoom *= 0.98;
+    // Opcional: poner un límite al zoom para que no se vuelva demasiado pequeño
+    if (zoom < 0.05) { // Un valor pequeño, ajusta según sea necesario
+        zoom = 0.05;
+    }
+  }
 
+  // Dibujar el marco del teléfono si el zoom es lo suficientemente pequeño
+  // Esto permitirá que se vea incluso si la escena está haciendo un fade out
   if (zoom < 0.3) {
     drawPhoneFrame();
-    delay(500);  // pequeña pausa para el efecto
-    currentScene = 0;  // regresar al inicio
-    resetZoom();
   }
+  // Ya NO hay transición automática desde aquí
 }
 
 void resetZoom() {
