@@ -1,49 +1,69 @@
 // Juan Camilo Ibáñez - 201924835
+
+//Propuesta de diseño: la deshumanización de las personas por medio de los datos de algoritmos empresariales.
+
 //datos sacados de https://www.kaggle.com/datasets/arpitsinghaiml/youtube-user-by-country-2025/data
 
 import processing.sound.*;
 
-Table table;
-int nSamples;
-float[] totalUsers;
+// Variables relacionadas con los datos
+Table table;    // Tabla para almacenar los datos cargados desde CSV
+int nSamples;      // Número de filas/muestras en la tabla
+float[] totalUsers;    // Arreglo que almacena la cantidad de usuarios por país
 
-float x;
+// Variables generales
+float x;   // Variable auxiliar, no utilizada en este fragmento
 
-PFont font;
+PFont font;  // Fuente utilizada para el texto
 
-int currentScene = 0;
-int nextScene = 0;
-float alpha = 0;
-boolean transitioning = false;
-boolean fadingOut = true;
-float fadeSpeed = 5;
+// Control de escenas
+int currentScene = 0;  // Índice de la escena actual
+int nextScene = 0;   // Índice de la siguiente escena durante una transición
+float alpha = 0;   // Nivel de opacidad para efecto de fundido
+boolean transitioning = false; // Indica si hay una transición en curso
+boolean fadingOut = true;  // Indica si estamos en la fase de fundido de salida
+float fadeSpeed = 5;  // Velocidad de cambio de opacidad
 
-float zoom = 1.0;
-boolean zoomingOut = false;
+// Control de zoom
+float zoom = 1.0;   // Escala de zoom para la escena actual
+boolean zoomingOut = false; // Bandera para controlar si se está haciendo zoom out
 
-int transitionMode = 0; // 0 para Fundido (Fade), 1 para Zoom Out de Escena
-float sceneTransitionZoom = 1.0; // Para el efecto de zoom out de toda la escena
-float sceneTransitionZoomSpeed = 0.025; // Velocidad del zoom out de escena (ajusta)
+// Modos de transición entre escenas
+int transitionMode = 0;    // 0: Fundido, 1: Zoom out, 2: Zoom inverso
+float sceneTransitionZoom = 1.0;  // Escala usada durante el zoom out entre escenas
+float sceneTransitionZoomSpeed = 0.025; // Velocidad del zoom out
 
-float sceneEntryZoom = 2.5; // Zoom inicial para la entrada de escena (más grande que la pantalla)
-float sceneEntryZoomTarget = 1.0;
-float sceneEntryZoomSpeed = 0.035; // Velocidad de "encogimiento", ajusta si es necesario
+// Transición de entrada estilo "aterrizaje" para la escena 3 (SceneThree)
+float sceneEntryZoom = 5;  // Escala inicial de entrada de escena
+float sceneEntryZoomTarget = 1;  // Escala objetivo al finalizar el aterrizaje
+float sceneEntryZoomSpeed = 0.035; // Velocidad de "encogimiento"
 
-Person[] people;
-int numPersonas = 40;
+// Arreglos de entidades visuales
+Person[] people;   // Arreglo de personas que se mueven por la pantalla
+int numPersonas = 40;   // Número total de personas
 
-Piedra[] piedras;
-int numPiedras = 7; // Ajusta la cantidad
+Piedra[] piedras;    // Arreglo de piedras decorativas
+int numPiedras = 7;   // Número de piedras en escena
+
+// Archivos de sonido
+SoundFile snd1;     // Sonido ambiental para la escena 1
+SoundFile snd2;     // Sonido para la escena 2
+
+// --- FUNCIONES PRINCIPALES ---
 
 void setup() {
   size(800, 600);
   textAlign(CENTER);
   
-  font = createFont("Courier New Bold", 32); //fuente a usar
+  font = createFont("Courier New Bold", 32);
   textFont(font);
   textAlign(CENTER, CENTER);
 
-  // Primero carga los datos
+  // Cargar sonidos
+  snd1 = new SoundFile(this, "PedestriansSound.mp3");
+  snd2 = new SoundFile(this, "DATASound.mp3");
+
+  // Cargar datos de usuarios de YouTube desde archivo CSV
   table = loadTable("youtube2025.csv", "header");
   nSamples = table.getRowCount();
   totalUsers = new float[nSamples];
@@ -52,23 +72,32 @@ void setup() {
     totalUsers[i] = table.getFloat(i, "YouTubeUsers_TotalUsers_Num_2024Feb");
   }
 
+  // Inicializar personas con posiciones y colores aleatorios
   people = new Person[numPersonas];
   for (int i = 0; i < people.length; i++) {
     people[i] = new Person(random(width), random(-25,height));
   }
-  
+
+  // Inicializar piedras con posiciones y formas aleatorias
   piedras = new Piedra[numPiedras];
   for (int i = 0; i < numPiedras; i++) {
-    // Distribuir piedras, quizás más en la parte inferior para simular suelo
     piedras[i] = new Piedra(random(width), random(-25,height));
   }
-  
+
+  // Iniciar sonido de la primera escena
+  if (currentScene == 0 && snd1 != null) {
+    snd1.loop();
+  } else if (currentScene == 1 && snd2 != null) {
+    snd2.loop();
+  }
 }
 
 void draw() {
+  
+  // La implementación de transiciones entre escenas fue generada con inteligencia artificial
   if (transitioning) {
-    if (transitionMode == 0) { // MODO FUNDIDO (FADE)
-      // ... (tu código de FADE existente y correcto está aquí) ...
+    if (transitionMode == 0) { // Transición por fundido
+
         if (fadingOut) {
             drawSceneContent(currentScene);
         } else {
@@ -80,7 +109,8 @@ void draw() {
             alpha += fadeSpeed;
             if (alpha >= 255) {
                 alpha = 255;
-                currentScene = nextScene; 
+                currentScene = nextScene;
+                manageSceneAudio(currentScene);
                 fadingOut = false;       
                 if (currentScene == 0 || currentScene == 2) {
                     resetZoom(); 
@@ -94,8 +124,7 @@ void draw() {
                 fadingOut = true; 
             }
         }
-    } else if (transitionMode == 1) { // MODO ZOOM OUT DE ESCENA (SceneThree a SceneOne)
-      // ... (tu código de ZOOM OUT DE ESCENA existente y correcto está aquí) ...
+    } else if (transitionMode == 1) { // Transición por zoom out de toda la escena
         drawSceneContent(0); 
         pushMatrix();
         translate(width/2, height/2);
@@ -108,80 +137,67 @@ void draw() {
             sceneTransitionZoom = 1.0; 
             transitioning = false;
             currentScene = nextScene; 
+            manageSceneAudio(currentScene);
             resetZoom(); 
             transitionMode = 0; 
         }
-    } else if (transitionMode == 2) { // NUEVO: MODO ZOOM "INVERSO" (SceneTwo a SceneThree)
-      // currentScene es 1 (SceneTwo), nextScene es 2 (SceneThree)
+    } else if (transitionMode == 2) { // Transición inversa (zoom in hacia escena 3)
 
-      // 1. Dibuja SceneTwo (datos) como fondo.
+      // Dibuja la segunda escena (datos) como fondo.
       drawSceneContent(1); 
-
-      // 2. Dibuja SceneThree (celular y su futuro contenido) encima, escalado.
-      //    SceneThree dibujará su propio fondo (#87a1ab), cubriendo SceneTwo a medida que "aterriza".
+      // Dibuja la tercera escena (celular y su futuro contenido) encima, escalado.
       pushMatrix();
       translate(width/2, height/2);
-      scale(sceneEntryZoom); // Escalar SceneThree (empieza grande > 1.0, va hacia 1.0)
+      scale(sceneEntryZoom); // Escalar la tercera escena (empieza grande > 1.0, va hacia 1.0)
       translate(-width/2, -height/2);
       
-      // Forzamos el zoom de contenido interno de SceneThree a 1.0 durante esta transición de "aterrizaje",
+      // Fuerza el zoom de contenido interno de la escena 3 a 1.0 durante esta transición de "aterrizaje",
       // porque es el celular entero el que se escala, no su contenido interno aún.
       float previousContentZoom = zoom; 
       zoom = 1.0; 
-      drawSceneContent(2); // Dibuja SceneThree
-      zoom = previousContentZoom; // Restaurar (aunque resetZoom() lo ajustará al final si es necesario)
+      drawSceneContent(2); // Dibuja tercera escena
+      zoom = previousContentZoom; // Restaurar
       
       popMatrix();
 
-      sceneEntryZoom -= sceneEntryZoomSpeed; // Encoger hacia el objetivo
+      sceneEntryZoom -= sceneEntryZoomSpeed; // Encoger hacia el objetivo (2.5 a 1.0)
       if (sceneEntryZoom <= sceneEntryZoomTarget) {
         sceneEntryZoom = sceneEntryZoomTarget; // Asegurar que llegue a 1.0
         transitioning = false;
-        currentScene = nextScene; // Oficialmente estamos en SceneThree
+        currentScene = nextScene;
+        manageSceneAudio(currentScene);// Se verifica que se llega a la tercera escena
         resetZoom(); // Asegura que el 'zoom' de contenido de SceneThree esté en 1.0 para su uso normal
-        // transitionMode = 0; // No es necesario resetear aquí, la próxima transición lo definirá
       }
     }
-  } else { // No hay transición, dibujar la escena actual normalmente
+  } else { // Si no hay transición, dibujar la escena actual normalmente
     drawSceneContent(currentScene);
   }
-  // EL BLOQUE DUPLICADO YA DEBERÍA HABER SIDO ELIMINADO DE AQUÍ
+
 }
 
 // Función auxiliar para dibujar el contenido de las escenas
 void drawSceneContent(int sceneId) {
   switch(sceneId) {
-    case 0: 
-      sceneOne(); 
-      break;
-    case 1: 
-      sceneTwo(); 
-      break;
-    case 2: 
-      sceneThree(); 
-      break;
-    default:
-      // Opcional: manejar un caso desconocido, aunque no debería ocurrir
-      // con la lógica actual.
-      // println("Error: Intentando dibujar una escena desconocida: " + sceneId);
-      break;
+    case 0: sceneOne(); break;
+    case 1: sceneTwo(); break;
+    case 2: sceneThree(); break;
   }
 }
 
-void keyPressed() {
+void keyPressed() { // Controla el cambio de escenas cuando se presiona la barra espaciadora
   if (key == ' ' && !transitioning) {
     int prevScene = currentScene;
     nextScene = (currentScene + 1) % 3;
     transitioning = true;
 
-    if (prevScene == 2 && nextScene == 0) { // De SceneThree (2) a SceneOne (0)
-      transitionMode = 1; // ZOOM OUT DE ESCENA (SceneThree se encoge)
+    if (prevScene == 2 && nextScene == 0) { // De la tercera a la primera escena (reinicio)
+      transitionMode = 1; // zoom out
       sceneTransitionZoom = 1.0; // Inicia a escala 1 y se encoge
-    } else if (prevScene == 1 && nextScene == 2) { // De SceneTwo (1) a SceneThree (2)
-      transitionMode = 2; // ZOOM "INVERSO" DE CELULAR A ESCENA (SceneThree "aterriza")
+    } else if (prevScene == 1 && nextScene == 2) { // De la primera a la segunda escena
+      transitionMode = 2; // zoom inverso
       sceneEntryZoom = 2.5; // Inicia grande y se encoge a 1.0
-    } else { // Para la transición restante (0->1)
-      transitionMode = 0; // FUNDIDO (FADE)
+    } else {
+      transitionMode = 0; // fade out para la escena 1 a la 2
       alpha = 0;
       fadingOut = true;
     }
@@ -192,7 +208,7 @@ class Person {
   float x, y;
   float speed;
   color bodyColor;
-  float userData;  // Valor de usuario (dato real)
+  float userData;  // Valor de usuario (dato real "YouTubeUsers_TotalUsers_Num_2024Feb" del csv)
 
   Person(float x, float y) {
     this.x = x;
@@ -206,28 +222,29 @@ class Person {
     
   }
 
-  void update() {
+  void update() { // Actualiza la posición horizontal de la persona.
     x += speed;
     if (x > width) x = -20;
   }
 
-  void display() {
+  void display() { // Dibuja la persona con cabeza y cuerpo (óvalos).
     stroke(0);
+    strokeWeight(1);
     fill(#FDDDCA);  // cabeza rosada
-    ellipse(x, y, 20, 20);       // cabeza
-    fill(bodyColor);            // ropa morada
+    ellipse(x, y, 20, 20);  // cabeza
+    fill(bodyColor);  // ropa morada
     ellipse(x, y + 25, 15, 30);  // cuerpo
   }
 }
 
 class Piedra {
-  float x, y; // Posición central de la piedra
-  float[] w = new float[3];
-  float[] h = new float[3];
-  color[] c = new color[3];
-  float[] offsetX = new float[3];
-  float[] offsetY = new float[3];
-  float[] angle = new float[3];
+  float x, y;   // Posición central de la piedra
+  float[] w = new float[3];  // Anchos de los rectángulos
+  float[] h = new float[3];   // Altos de los rectángulos
+  color[] c = new color[3];   // Colores de cada parte de la piedra
+  float[] offsetX = new float[3]; // Desplazamientos X
+  float[] offsetY = new float[3]; // Desplazamientos Y
+  float[] angle = new float[3];  // Rotación individual
 
   Piedra(float x, float y) {
     this.x = x;
@@ -251,7 +268,7 @@ class Piedra {
     }
   }
 
-  void display() {
+  void display() { // Dibuja la piedra en la pantalla como un grupo de rectángulos
     pushStyle(); // Aislar rectMode y otros estilos
     rectMode(CENTER);
     noStroke();
@@ -263,7 +280,29 @@ class Piedra {
       rect(0, 0, w[i], h[i]);
       popMatrix();
     }
-    popStyle(); // Restaurar estilos
+    popStyle(); // Restaura estilos
+  }
+}
+
+void manageSceneAudio(int newSceneId) { // Cambia el loop de sonido de fondo según la escena activa
+ 
+  // Detiene todos los sonidos que podrían estar reproduciéndose
+  if (snd1 != null && snd1.isPlaying()) {
+    snd1.stop();
+  }
+  if (snd2 != null && snd2.isPlaying()) {
+    snd2.stop();
+  }
+
+  // Inicia el sonido para la nueva escena (si aplica)
+  if (newSceneId == 0) { // Audio para SceneOne
+    if (snd1 != null) { // Asegúrate de que el archivo de sonido se cargó correctamente
+      snd1.loop(); // Inicia el sonido en bucle
+    }
+  } else if (newSceneId == 1) { // Audio para SceneTwo
+    if (snd2 != null) {
+      snd2.loop();
+    }
   }
 }
 
@@ -275,9 +314,10 @@ void sceneOne() {
     pi.display();
   }
   
+  // texto
   fill(#587B89);
   textSize(24);
-  textAlign(CENTER, CENTER); // Asegúrate que esto esté antes de text()
+  textAlign(CENTER, CENTER);
   text("[ presionar espacio para continuar ]",width/2,height/2);
   
   // Dibujar personas
@@ -288,9 +328,10 @@ void sceneOne() {
 }
 
 void sceneTwo() {
-  background(0);
+  background(40);
   
-  fill(50);
+  // texto
+  fill(0);
   textSize(16);
   text("[ espacio ]",width-65,height-25);
   
@@ -305,7 +346,7 @@ void sceneTwo() {
 }
 
 void sceneThree() {
-  background(#87a1ab); // Mismo color de fondo que sceneOne
+  background(#87a1ab); // Mismo color de fondo que la primera escena
 
   // Texto de ayuda
   pushStyle(); // Aislar textAlign y textSize para el texto de ayuda
@@ -326,25 +367,26 @@ void sceneThree() {
   // Inicio del "mundo del celular" que se escala con 'zoom'
   pushMatrix();
   translate(width/2, height/2); // Centrar
-  scale(zoom);                   // Aplicar zoom de contenido
+  scale(zoom);        // Aplicar zoom de contenido
   translate(-width/2, -height/2);  // Volver a coordenadas de canvas (pero todo está escalado)
 
   // Dibujar los datos (texto)
   textAlign(CENTER, CENTER); // Para los datos numéricos
-  textSize(14);             // Tamaño base para los datos
+  textSize(14);     // Tamaño base para los datos
   for (Person p : people) {
-    // p.update(); // Descomenta si quieres que los datos se muevan dentro del celular
     fill(random(120, 200), random(0, 80), random(120, 255)); // Color del texto aleatorio
     text(int(p.userData), p.x, p.y); // Usar las posiciones x,y originales de Person
   }
   popMatrix(); // Fin del "mundo del celular" escalado
   noStroke();
-  fill(#FDDDCA, 200); // Mano un poco transparente
+  fill(160, 32, 240);
+  circle(width/2, height+300, 1000); // cuerpo
+  fill(#E0CBBE);
   circle(width/2 + 175, height/2 + 100, 300); // Parte de la mano
-  // Dibujar el teléfono y la mano
   drawPhone(); // Dibujar el marco del teléfono siempre
   fill(#FDDDCA);
-  ellipse(width/2 + 150, height/2 + 175, 200, 100); // Dedos/pulgar
+  noStroke();
+  ellipse(width/2 + 150, height/2 + 175, 200, 100); //pulgar
 }
 
 void resetZoom() {
@@ -353,8 +395,14 @@ void resetZoom() {
 
 void drawPhone() {
   stroke(0);
-  fill(75);
+  fill(40);
   strokeWeight(4);
-  rect(width/2 - 150, height/2 - 275, 300, 550,15);
-  strokeWeight(1);
+  rect(width/2 - 150, height/2 - 275, 300, 550,15); //celular
+  
+  // logo instagram
+  noFill();
+  stroke(color(random(120, 200), random(0, 80), random(120, 255)));
+  rect(width/2-50, height/2-50, 100, 100,15);
+  circle(width/2, height/2, 50);
+  circle(width/2+35, height/2-35, 5);
 }
